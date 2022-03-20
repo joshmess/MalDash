@@ -7,6 +7,7 @@ Server runs at http://127.0.0.1:5000
 '''
 
 # import related libraries
+from struct import pack
 from flask import Flask, render_template, request
 import sys, os
 from scapy.all import *
@@ -57,7 +58,14 @@ def maldash():
             path = "uploaded_captures/"+file.filename
             packets = rdpcap(path)
 
-            return render_template('report.html',filename=file.filename)
+            total_packets=0
+
+            # Analyze Packets
+            for i, p in enumerate(packets):
+
+                total_packets += 1
+
+            return render_template('report.html',filename=file.filename,total=total_packets)
 
 
     # Assuming no POST request, render main (upload) page
