@@ -26,10 +26,39 @@ app = Flask(__name__)
 
    
 # Mainpage endpoint
-@app.route('/', methods=["GET", "POST"])
+@app.route('/', methods=['GET', 'POST'])
 def maldash():
 
-    
+    # Detect if a file is uploaded
+    if request.method == 'POST':
+        # Extract uploaded files
+        if request.files:
+            file = request.files["file"]
+            # Check name of upload
+            if file.filename == "":
+                err_msg = "Must upload a capture!"
+                return render_template('mainpage.html',err_msg=err_msg)
+            
+            # Check file type of upload
+            extension = file.filename.split('.')[1]
+            if extension != 'pcap' and extension != 'pcapng':
+                err_msg = "Must upload a pcaket capture (pcap or pcapng)"
+                return render_template('mainpage.html',err_msg=err_msg)
+        
+            # Save file to machine
+            direct_path = f"{os.getcwd()}\\uploaded_captures"
+            app.config["FILE_UPLOADS"] = rf"{direct_path}"
+            file.save(os.path.join(app.config["FILE_UPLOADS"], file.filename))
+
+            # IMPORTANT: Load Scapy TLS layer
+            load_layer('tls')
+
+            # Unpack capture with Scapy
+            path = "uploaded_captures/"+file.filename
+            packets = rdpcap(path)
+
+            return render_template('report.html',filename=file.filename)
+
 
     # Assuming no POST request, render main (upload) page
     return render_template('mainpage.html')
