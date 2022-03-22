@@ -47,7 +47,7 @@ def maldash():
                 return render_template('mainpage.html',err_msg=err_msg)
         
             # Save file to machine
-            direct_path = f"{os.getcwd()}\\uploaded_captures"
+            direct_path = f"{os.getcwd()}/uploaded_captures"
             app.config["FILE_UPLOADS"] = rf"{direct_path}"
             file.save(os.path.join(app.config["FILE_UPLOADS"], file.filename))
 
