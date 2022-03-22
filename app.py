@@ -58,6 +58,9 @@ def maldash():
             path = "uploaded_captures/"+file.filename
             packets = rdpcap(path)
 
+            # Query VirusTotal for File properties
+            
+
             total_packets=0
 
             # Analyze Packets
