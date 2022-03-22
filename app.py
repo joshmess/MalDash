@@ -60,6 +60,16 @@ def maldash():
 
             # Query VirusTotal for File properties
             
+            # Get hashes (md5, sha256, sha1)
+            url = 'https://www.virustotal.com/vtapi/v2/file/scan'
+            params = {'apikey': VT_API_KEY}
+            files = {'file':(path, open(path, 'rb'))}
+            response = requests.post(url=url,files=files,params=params)
+            
+            md5 = response.json()['md5']
+            sha1 = response.json()['sha1']
+            sha256 = response.json()['sha256']
+            
 
             total_packets=0
 
@@ -68,7 +78,7 @@ def maldash():
 
                 total_packets += 1
 
-            return render_template('report.html',filename=file.filename,total=total_packets)
+            return render_template('report.html',filename=file.filename,total=total_packets,md5=md5,sha256=sha256,sha1=sha1)
 
 
     # Assuming no POST request, render main (upload) page
