@@ -18,6 +18,26 @@
             bottom: 50%;
             text-align: center;
         }
+        .button {
+            background-color: #BA0c2f; /* Green */
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            border-radius: 12px;
+            transition-duration: 0.4s;
+        }
+        .button:hover {
+            background-color: black; /* Green */
+            color: BA0c2f;
+        }
+        .moreText {
+            /* Display nothing for the element */
+            display: none;
+        }
 
     </style>
     <body>
@@ -39,17 +59,99 @@
         </div>
 
         <div>
-            <h5><b>File Properties:</b></h5>
-            <p>md5 Hash: {{md5}}</p>
-            <p>sha256 Hash: {{sha256}}</p>
-            <p>sha1 Hash: {{sha1}}</p>
+            <button class = "button" type="button" >Basic Properties</button> 
+            <p>
+            
+                File Type: Network Capture<br>
+                md5 Hash: {{md5}}<br>
+                sha256 Hash: {{sha256}}<br>
+                sha1 Hash: {{sha1}}<br>
+        
+            </p>
+            
         </div>
 
         <div>
-            <h5><b>Capture Breakdown:</b></h5>
-            <p>Total Packets: {{total}}</p>
+            <button class = "button" type="button">Capture Breakdown</button> 
+            <br>Total Packets: {{total}}<br>
+            Ethernet Packets: {{ethernet_pkts}}<br>
+            IP Packets: {{ip_pkts}}<br>
+            TCP Packets: {{tcp_pkts}}<br>
+            UDP Packets: {{udp_pkts}}<br>
+            TLS Packets: {{tls_pkts}}<br>
+
+            <div id="common_ips" class="chart"></div>
+            
+        </div>
+
+        <div>
+            <button class = "button" type="button">VirusTotal Malware Detections</button> 
+            <div id="vendor_chart" class="chart"></div>
+
+
+        </div>
+
+        
+
+        <div>
+            <button class = "button" type="button">TLS Information</button> 
+            <div id="tls_ips" class="chart"></div>
+            <div id="tls_msg" class="chart"></div>
+            <div id="tls_sizes" class="chart"></div>
+            <div id="tls_violin" class="chart"></div>
+            <div id="servers" class="chart"></div>
+            
+            
+        </div>
+
+        <div>
+            <button class = "button" type="button">TLS Heatmaps</button> 
+            <div id="data_heatmap" class="chart"></div>
+            <div id="msg_heatmap" class="chart"></div>
+            
+            
+            
         </div>
       
     </body>
+
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script type="text/javascript">
+        var graphs = {{vendor_chart | safe}};
+        Plotly.plot('vendor_chart',graphs,{});        
+    </script>
+    <script type="text/javascript">
+        var graphs = {{common_ips | safe}};
+        Plotly.plot('common_ips',graphs,{});        
+    </script>
+    <script type="text/javascript">
+        var graphs = {{tls_ips | safe}};
+        Plotly.plot('tls_ips',graphs,{});        
+    </script>
+    <script type="text/javascript">
+        var graphs = {{tls_sizes | safe}};
+        Plotly.plot('tls_sizes',graphs,{});        
+    </script>
+    <script type="text/javascript">
+        var graphs = {{tls_violin | safe}};
+        Plotly.plot('tls_violin',graphs,{});        
+    </script>
+    <script type="text/javascript">
+        var graphs = {{tls_msg | safe}};
+        Plotly.plot('tls_msg',graphs,{});        
+    </script>
+    <script type="text/javascript">
+        var graphs = {{servers | safe}};
+        Plotly.plot('servers',graphs,{});        
+    </script>
+    <script type="text/javascript">
+        var graphs = {{data_heatmap | safe}};
+        Plotly.plot('data_heatmap',graphs,{});        
+    </script>
+    <script type="text/javascript">
+        var graphs = {{msg_heatmap | safe}};
+        Plotly.plot('msg_heatmap',graphs,{});        
+    </script>
  
+    
 </html> 

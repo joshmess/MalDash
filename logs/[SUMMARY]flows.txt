@@ -1,0 +1,11 @@
+Capture summary for file: flows.pcap
+Total packets detected: 9443
+Ethernet packets detected: 9443
+UDP packets detected: 110
+TCP packets detected: 9229
+TLS packets detected: 558
+	TLS Handshake Packets detected: 165
+	TLS Cipher Specification Packets detected: 67
+	TLS Application Data Packets detected: 289
+	TLS Alerts detected: 37
+Average Packet Length: 314
