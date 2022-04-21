@@ -19,6 +19,8 @@ import json
 import plotly
 import requests
 from collections import Counter
+import country_converter as coco
+from ip2geotools.databases.noncommercial import DbIpCity
 
 # Important Variables
 VT_API_KEY = 'fff1422d2f248f2713f21bbe99f855e4ec7695f56b85c56fbbf002a57eac93a5'
@@ -305,15 +307,15 @@ def maldash():
             '''
             ******Most Common IP Addresses******
             '''
-            count = Counter()
+            all_count = Counter()
             for ip in source_ips:
-                count[ip] += 1
+                all_count[ip] += 1
             # data for plotly
             xData = []
             yData = []
             
             # Aggregate data
-            for ip, count in count.most_common(10):
+            for ip, count in all_count.most_common(10):
                 xData.append(ip)
                 yData.append(count)
                     
@@ -436,11 +438,106 @@ def maldash():
             # gen json to pass to html
             msg_heatmap = json.dumps(heatmap,cls=plotly.utils.PlotlyJSONEncoder)
 
+            '''
+            ******All Country Codes******
+            '''
+            countryX = []
+            countryY = []
+
+            params = ['query', 'status', 'country', 'countryCode', 'city', 'timezone', 'mobile']
+
+
+            for ip, count in all_count.most_common(6):
+
+                resp = requests.get('http://ip-api.com/json/' + ip, params={'fields': ','.join(params)})
+                info = resp.json()
+                if(info['status'] == "success"):
+                    #print(info)
+                    countryCode = info['countryCode']
+                    countryX.append(countryCode)
+                    countryY.append(count)
+
+            df = pd.DataFrame({"country": countryX,"freq":countryY})
+            # create figure
+            country_fig = px.bar(df,x="country",y="freq",color_discrete_sequence =['orange']*len(df),title="Common Country Codes",
+                labels={
+                    "ip":"IP Address",
+                    "freq":'Frequency'
+                    })
+            country_fig.update_layout(font=dict(family="Arial",color='black'))
+
+            # gen json to pass to html
+            all_country_bar = json.dumps(country_fig,cls=plotly.utils.PlotlyJSONEncoder)
+
+            iso3_codes = coco.convert(names=countryX,to='ISO3')
+            full_country_names = coco.convert(names=iso3_codes,to='name_short')
+            df = pd.DataFrame({"countryCode": iso3_codes,"freq":countryY,"proper_names":full_country_names})
+
+            fig = px.scatter_geo(df, locations="countryCode",
+                            hover_name="proper_names", # column added to hover information
+                            size="freq", # size of markers
+                            title="IP Address Origins (All Source IPs)",
+                            projection="natural earth")
+            fig.update_layout(font=dict(family="Arial",color='black'))
+
+            # gen json to pass to html
+
+            all_map_json = json.dumps(fig,cls=plotly.utils.PlotlyJSONEncoder)
+
+            '''
+            ******TLS Country Codes******
+            '''
+            countryX = []
+            countryY = []
+
+            params = ['query', 'status', 'country', 'countryCode', 'city', 'timezone', 'mobile']
+
+            #print('ip',tls_count.most_common()[0])
+
+
+            for ip, count in tls_count.most_common(6):
+
+                #print(ip)
+                resp = requests.get('http://ip-api.com/json/' + ip, params={'fields': ','.join(params)})
+                info = resp.json()
+                if(info['status'] == "success"):
+                    #print(info)
+                    countryCode = info['countryCode']
+                    countryX.append(countryCode)
+                    countryY.append(count)
+
+            df = pd.DataFrame({"country": countryX,"freq":countryY})
+            # create figure
+            country_fig = px.bar(df,x="country",y="freq",color_discrete_sequence =['orange']*len(df),title="TLS Country Codes",
+                labels={
+                    "ip":"IP Address",
+                    "freq":'Frequency'
+                    })
+            country_fig.update_layout(font=dict(family="Arial",color='black'))
+
+            # gen json to pass to html
+            country_json = json.dumps(country_fig,cls=plotly.utils.PlotlyJSONEncoder)
+
+            iso3_codes = coco.convert(names=countryX,to='ISO3')
+            full_country_names = coco.convert(names=iso3_codes,to='name_short')
+            df = pd.DataFrame({"countryCode": iso3_codes,"freq":countryY,"proper_names":full_country_names})
+
+            fig = px.scatter_geo(df, locations="countryCode",
+                            hover_name="proper_names", # column added to hover information
+                            size="freq", # size of markers
+                            title="IP Address Origins (TLS Message IPs)",
+                            projection="natural earth")
+            fig.update_layout(font=dict(family="Arial",color='black'))
+
+            # gen json to pass to html
+
+            tls_map_json = json.dumps(fig,cls=plotly.utils.PlotlyJSONEncoder)
+
 
             return render_template('report.html',filename=file.filename,total=total_packets,md5=md5,sha256=sha256,sha1=sha1,vendor_chart=vt_figure, ethernet_pkts=ethernet_pkts,
                                     ip_pkts=ip_pkts,tcp_pkts=tcp_pkts,udp_pkts=udp_pkts,tls_pkts=tls_pkts,common_ips=common_ips, tls_ips=tls_ips, tls_sizes=tls_sizes,
                                     tls_violin=violin_json, tls_msg=msgtype_json, servers=funnel_json, data_heatmap=data_heatmap,
-                                    msg_heatmap=msg_heatmap
+                                    msg_heatmap=msg_heatmap, tls_country_bar=country_json, tls_map=tls_map_json, all_country_bar=all_country_bar, all_map_json=all_map_json
                                     )
             
 

@@ -81,6 +81,8 @@
             TLS Packets: {{tls_pkts}}<br>
 
             <div id="common_ips" class="chart"></div>
+            <div id="all_map_json" class="chart"></div>
+            <div id="all_country_bar" class="chart"></div>
             
         </div>
 
@@ -96,6 +98,8 @@
         <div>
             <button class = "button" type="button">TLS Information</button> 
             <div id="tls_ips" class="chart"></div>
+            <div id="tls_map" class="chart"></div>
+            <div id="tls_country_bar" class="chart"></div>
             <div id="tls_msg" class="chart"></div>
             <div id="tls_sizes" class="chart"></div>
             <div id="tls_violin" class="chart"></div>
@@ -151,6 +155,22 @@
     <script type="text/javascript">
         var graphs = {{msg_heatmap | safe}};
         Plotly.plot('msg_heatmap',graphs,{});        
+    </script>
+    <script type="text/javascript">
+        var graphs = {{tls_country_bar | safe}};
+        Plotly.plot('tls_country_bar',graphs,{});        
+    </script>
+    <script type="text/javascript">
+        var graphs = {{tls_map | safe}};
+        Plotly.plot('tls_map',graphs,{});        
+    </script>
+    <script type="text/javascript">
+        var graphs = {{all_country_bar | safe}};
+        Plotly.plot('all_country_bar',graphs,{});        
+    </script>
+    <script type="text/javascript">
+        var graphs = {{all_map_json | safe}};
+        Plotly.plot('all_map_json',graphs,{});        
     </script>
  
     
