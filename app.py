@@ -60,6 +60,8 @@ def maldash():
 
             # Unpack capture with Scapy
             path = "uploaded_captures/"+file.filename
+
+            
             packets = rdpcap(path)
 
             '''
@@ -158,7 +160,9 @@ def maldash():
 
             # IP Trackers
             source_ips = []
+            dest_ips = []
             tls_ips = []
+            tls_dests = []
 
             # Indices of various information
             msg_indices = []
@@ -196,6 +200,7 @@ def maldash():
                 if IP in p:
                     ip_pkts += 1
                     source_ips.append(p[IP].src)           # detect IP
+                    dest_ips.append(p[IP].dst)
                     total_len += p[IP].len
                     avg_len += 1
                 if TCP in p:
@@ -212,6 +217,7 @@ def maldash():
                     msg_index = 0
                     encrypt_index = 0
                     tls_ips.append(p[IP].src)
+                    tls_dests.append(p[IP].dst)
 
                     # create tuple
                     label = (p[IP].src, p[TCP].sport, p[IP].dst, p[TCP].dport)
@@ -446,7 +452,6 @@ def maldash():
 
             params = ['query', 'status', 'country', 'countryCode', 'city', 'timezone', 'mobile']
 
-
             for ip, count in all_count.most_common(6):
 
                 resp = requests.get('http://ip-api.com/json/' + ip, params={'fields': ','.join(params)})
@@ -457,17 +462,40 @@ def maldash():
                     countryX.append(countryCode)
                     countryY.append(count)
 
-            df = pd.DataFrame({"country": countryX,"freq":countryY})
-            # create figure
-            country_fig = px.bar(df,x="country",y="freq",color_discrete_sequence =['orange']*len(df),title="Common Country Codes",
-                labels={
-                    "ip":"IP Address",
-                    "freq":'Frequency'
-                    })
-            country_fig.update_layout(font=dict(family="Arial",color='black'))
+            iso3_codes = coco.convert(names=countryX,to='ISO3')
+            full_country_names = coco.convert(names=iso3_codes,to='name_short')
+            df = pd.DataFrame({"countryCode": iso3_codes,"freq":countryY,"proper_names":full_country_names})
+
+            fig = px.scatter_geo(df, locations="countryCode",
+                            hover_name="proper_names", # column added to hover information
+                            size="freq", # size of markers
+                            title="IP Address Source Locations (All IPs)",
+                            projection="natural earth")
+            fig.update_layout(font=dict(family="Arial",color='black'))
 
             # gen json to pass to html
-            all_country_bar = json.dumps(country_fig,cls=plotly.utils.PlotlyJSONEncoder)
+
+            all_map_json = json.dumps(fig,cls=plotly.utils.PlotlyJSONEncoder)
+
+
+            all_dst = Counter()
+            for ip in dest_ips:
+                all_dst[ip] += 1
+
+            countryX = []
+            countryY = []
+
+            params = ['query', 'status', 'country', 'countryCode', 'city', 'timezone', 'mobile']
+
+            for ip, count in all_dst.most_common(6):
+
+                resp = requests.get('http://ip-api.com/json/' + ip, params={'fields': ','.join(params)})
+                info = resp.json()
+                if(info['status'] == "success"):
+                    #print(info)
+                    countryCode = info['countryCode']
+                    countryX.append(countryCode)
+                    countryY.append(count)
 
             iso3_codes = coco.convert(names=countryX,to='ISO3')
             full_country_names = coco.convert(names=iso3_codes,to='name_short')
@@ -476,13 +504,13 @@ def maldash():
             fig = px.scatter_geo(df, locations="countryCode",
                             hover_name="proper_names", # column added to hover information
                             size="freq", # size of markers
-                            title="IP Address Origins (All Source IPs)",
+                            title="IP Address Destination Locations (All IPs)",
                             projection="natural earth")
             fig.update_layout(font=dict(family="Arial",color='black'))
 
             # gen json to pass to html
 
-            all_map_json = json.dumps(fig,cls=plotly.utils.PlotlyJSONEncoder)
+            all_map_dest_json = json.dumps(fig,cls=plotly.utils.PlotlyJSONEncoder)
 
             '''
             ******TLS Country Codes******
@@ -491,9 +519,6 @@ def maldash():
             countryY = []
 
             params = ['query', 'status', 'country', 'countryCode', 'city', 'timezone', 'mobile']
-
-            #print('ip',tls_count.most_common()[0])
-
 
             for ip, count in tls_count.most_common(6):
 
@@ -506,18 +531,6 @@ def maldash():
                     countryX.append(countryCode)
                     countryY.append(count)
 
-            df = pd.DataFrame({"country": countryX,"freq":countryY})
-            # create figure
-            country_fig = px.bar(df,x="country",y="freq",color_discrete_sequence =['orange']*len(df),title="TLS Country Codes",
-                labels={
-                    "ip":"IP Address",
-                    "freq":'Frequency'
-                    })
-            country_fig.update_layout(font=dict(family="Arial",color='black'))
-
-            # gen json to pass to html
-            country_json = json.dumps(country_fig,cls=plotly.utils.PlotlyJSONEncoder)
-
             iso3_codes = coco.convert(names=countryX,to='ISO3')
             full_country_names = coco.convert(names=iso3_codes,to='name_short')
             df = pd.DataFrame({"countryCode": iso3_codes,"freq":countryY,"proper_names":full_country_names})
@@ -525,7 +538,7 @@ def maldash():
             fig = px.scatter_geo(df, locations="countryCode",
                             hover_name="proper_names", # column added to hover information
                             size="freq", # size of markers
-                            title="IP Address Origins (TLS Message IPs)",
+                            title="IP Address Source Locations (TLS IPs)",
                             projection="natural earth")
             fig.update_layout(font=dict(family="Arial",color='black'))
 
@@ -534,10 +547,45 @@ def maldash():
             tls_map_json = json.dumps(fig,cls=plotly.utils.PlotlyJSONEncoder)
 
 
+            tls_dst_cnt = Counter()
+            for ip in tls_dests:
+                tls_dst_cnt[ip] += 1
+
+            countryX = []
+            countryY = []
+
+            params = ['query', 'status', 'country', 'countryCode', 'city', 'timezone', 'mobile']
+
+            for ip, count in tls_dst_cnt.most_common(6):
+
+                resp = requests.get('http://ip-api.com/json/' + ip, params={'fields': ','.join(params)})
+                info = resp.json()
+                if(info['status'] == "success"):
+                    #print(info)
+                    countryCode = info['countryCode']
+                    countryX.append(countryCode)
+                    countryY.append(count)
+
+            iso3_codes = coco.convert(names=countryX,to='ISO3')
+            full_country_names = coco.convert(names=iso3_codes,to='name_short')
+            df = pd.DataFrame({"countryCode": iso3_codes,"freq":countryY,"proper_names":full_country_names})
+
+            fig = px.scatter_geo(df, locations="countryCode",
+                            hover_name="proper_names", # column added to hover information
+                            size="freq", # size of markers
+                            title="IP Address Destination Locations (TLS IPs)",
+                            projection="natural earth")
+            fig.update_layout(font=dict(family="Arial",color='black'))
+
+            # gen json to pass to html
+
+            tls_map_dest_json = json.dumps(fig,cls=plotly.utils.PlotlyJSONEncoder)
+
+
             return render_template('report.html',filename=file.filename,total=total_packets,md5=md5,sha256=sha256,sha1=sha1,vendor_chart=vt_figure, ethernet_pkts=ethernet_pkts,
                                     ip_pkts=ip_pkts,tcp_pkts=tcp_pkts,udp_pkts=udp_pkts,tls_pkts=tls_pkts,common_ips=common_ips, tls_ips=tls_ips, tls_sizes=tls_sizes,
                                     tls_violin=violin_json, tls_msg=msgtype_json, servers=funnel_json, data_heatmap=data_heatmap,
-                                    msg_heatmap=msg_heatmap, tls_country_bar=country_json, tls_map=tls_map_json, all_country_bar=all_country_bar, all_map_json=all_map_json
+                                    msg_heatmap=msg_heatmap, tls_map=tls_map_json, all_map_json=all_map_json, tls_map_dest_json=tls_map_dest_json, all_map_dest_json=all_map_dest_json
                                     )
             
 
